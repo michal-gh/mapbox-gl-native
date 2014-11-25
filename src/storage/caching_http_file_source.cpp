@@ -8,7 +8,7 @@
 
 namespace mbgl {
 
-FileSource::FileSource(uv_loop_t *loop_, const std::string &path)
+CachingHTTPFileSource::CachingHTTPFileSource(uv_loop_t *loop_, const std::string &path)
     : thread_id(uv_thread_self()),
       store(!path.empty() ? util::ptr<SQLiteStore>(new SQLiteStore(loop_, path)) : nullptr),
       loop(loop_),
@@ -21,7 +21,7 @@ FileSource::FileSource(uv_loop_t *loop_, const std::string &path)
     uv_unref((uv_handle_t *)&queue->async);
 }
 
-FileSource::~FileSource() {
+CachingHTTPFileSource::~CachingHTTPFileSource() {
     assert(thread_id == uv_thread_self());
     uv_messenger_stop(queue, [](uv_messenger_t *msgr) {
         delete msgr;
@@ -37,17 +37,17 @@ FileSource::~FileSource() {
     }
 }
 
-void FileSource::setBase(const std::string &value) {
+void CachingHTTPFileSource::setBase(const std::string &value) {
     assert(thread_id == uv_thread_self());
     base = value;
 }
 
-const std::string &FileSource::getBase() const {
+const std::string &CachingHTTPFileSource::getBase() const {
     assert(thread_id == uv_thread_self());
     return base;
 }
 
-std::unique_ptr<Request> FileSource::request(ResourceType type, const std::string &url) {
+std::unique_ptr<Request> CachingHTTPFileSource::request(ResourceType type, const std::string &url) {
     assert(thread_id == uv_thread_self());
 
     // Make URL absolute.
@@ -82,7 +82,7 @@ std::unique_ptr<Request> FileSource::request(ResourceType type, const std::strin
     return std::unique_ptr<Request>(new Request(req));
 }
 
-void FileSource::prepare(std::function<void()> fn) {
+void CachingHTTPFileSource::prepare(std::function<void()> fn) {
     if (thread_id == uv_thread_self()) {
         fn();
     } else {
@@ -90,7 +90,7 @@ void FileSource::prepare(std::function<void()> fn) {
     }
 }
 
-void FileSource::retryAllPending() {
+void CachingHTTPFileSource::retryAllPending() {
     assert(thread_id == uv_thread_self());
 
     util::ptr<BaseRequest> req;
