@@ -1,4 +1,4 @@
-#include <mbgl/storage/file_source.hpp>
+#include <mbgl/storage/caching_http_file_source.hpp>
 #include <mbgl/storage/file_request.hpp>
 #include <mbgl/storage/http_request.hpp>
 #include <mbgl/storage/sqlite_store.hpp>

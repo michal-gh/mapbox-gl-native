@@ -4,14 +4,13 @@
 #include <mbgl/util/noncopyable.hpp>
 #include <mbgl/storage/resource_type.hpp>
 #include <mbgl/storage/request.hpp>
-#include <mbgl/util/noncopyable.hpp>
 
 #include <string>
 #include <functional>
 
 namespace mbgl {
 
-class FileSource : public util:noncopyable {
+class FileSource : public util::noncopyable {
 public:
     virtual void setBase(const std::string &value) = 0;
     virtual std::unique_ptr<Request> request(ResourceType type, const std::string &url) = 0;

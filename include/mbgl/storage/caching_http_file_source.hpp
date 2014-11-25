@@ -1,12 +1,9 @@
 #ifndef MBGL_STORAGE_CACHING_HTTP_FILE_SOURCE
 #define MBGL_STORAGE_CACHING_HTTP_FILE_SOURCE
 
-#include <mbgl/storage/resource_type.hpp>
-#include <mbgl/storage/request.hpp>
+#include <mbgl/storage/file_source.hpp>
 
-#include <string>
 #include <unordered_map>
-#include <functional>
 
 typedef struct uv_loop_s uv_loop_t;
 typedef struct uv_messenger_s uv_messenger_t;
@@ -21,7 +18,6 @@ public:
     CachingHTTPFileSource(uv_loop_t *loop, const std::string &path);
     ~CachingHTTPFileSource();
 
-public:
     // Stores and retrieves the base path/URL for relative requests
     void setBase(const std::string &value);
     const std::string &getBase() const;
