@@ -85,7 +85,7 @@ const static bool sqlite_version_check = []() {
 
 using namespace mbgl;
 
-Map::Map(View& view_)
+Map::Map(View& view_, FileSource& fileSource_)
     : loop(std::make_unique<uv::loop>()),
       thread(std::make_unique<uv::thread>()),
       async_terminate(new uv_async_t()),
@@ -96,6 +96,7 @@ Map::Map(View& view_)
       main_thread(uv_thread_self()),
 #endif
       transform(view_),
+      fileSource(fileSource_),
       glyphAtlas(1024, 1024),
       spriteAtlas(512, 512),
       texturepool(std::make_shared<Texturepool>()),
@@ -276,11 +277,9 @@ void Map::terminate() {
 void Map::setReachability(bool reachable) {
     // Note: This function may be called from *any* thread.
     if (reachable) {
-        if (fileSource) {
-            fileSource->prepare([&]() {
-                fileSource->retryAllPending();
-            });
-        }
+        fileSource.prepare([&]() {
+            fileSource.retryAllPending();
+        });
     }
 }
 
@@ -344,11 +343,10 @@ void Map::setStyleJSON(std::string newStyleJSON, const std::string &base) {
         style = std::make_shared<Style>();
     }
     style->loadJSON((const uint8_t *)styleJSON.c_str());
-    if (!fileSource) {
-        fileSource = std::make_shared<FileSource>(**loop, platform::defaultCacheDatabase());
-        glyphStore = std::make_shared<GlyphStore>(*fileSource);
+    if (!glyphStore) {
+        glyphStore = std::make_shared<GlyphStore>(fileSource);
     }
-    fileSource->setBase(base);
+    fileSource.setBase(base);
     glyphStore->setURL(util::mapbox::normalizeGlyphsURL(style->glyph_url, getAccessToken()));
     update();
 }
@@ -370,7 +368,7 @@ util::ptr<Sprite> Map::getSprite() {
     const float pixelRatio = state.getPixelRatio();
     const std::string &sprite_url = style->getSpriteURL();
     if (!sprite || sprite->pixelRatio != pixelRatio) {
-        sprite = Sprite::Create(sprite_url, pixelRatio, *fileSource);
+        sprite = Sprite::Create(sprite_url, pixelRatio, fileSource);
     }
 
     return sprite;
@@ -607,7 +605,7 @@ void Map::updateSources() {
         if (style_source->enabled) {
             if (!style_source->source) {
                 style_source->source = std::make_shared<Source>(style_source->info);
-                style_source->source->load(*this, *fileSource);
+                style_source->source->load(*this, fileSource);
             }
         } else {
             style_source->source.reset();
@@ -642,20 +640,19 @@ void Map::updateSources(const util::ptr<StyleLayerGroup> &group) {
 
 void Map::updateTiles() {
     for (const util::ptr<StyleSource> &source : getActiveSources()) {
-        source->source->update(*this, *fileSource);
+        source->source->update(*this, fileSource);
     }
 }
 
 void Map::prepare() {
-    if (!fileSource) {
-        fileSource = std::make_shared<FileSource>(**loop, platform::defaultCacheDatabase());
-        glyphStore = std::make_shared<GlyphStore>(*fileSource);
+    if (!glyphStore) {
+        glyphStore = std::make_shared<GlyphStore>(fileSource);
     }
 
     if (!style) {
         style = std::make_shared<Style>();
 
-        fileSource->request(ResourceType::JSON, styleURL)->onload([&](const Response &res) {
+        fileSource.request(ResourceType::JSON, styleURL)->onload([&](const Response &res) {
             if (res.code == 200) {
                 // Calculate the base
                 const size_t pos = styleURL.rfind('/');

@@ -102,4 +102,8 @@ void CachingHTTPFileSource::retryAllPending() {
 
 }
 
+void CachingHTTPFileSource::reset() {
+  // no-op
+}
+
 }

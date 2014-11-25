@@ -13,7 +13,7 @@ namespace mbgl {
 class BaseRequest;
 class SQLiteStore;
 
-class CachingHTTPFileSource : FileSource {
+class CachingHTTPFileSource : public FileSource {
 public:
     CachingHTTPFileSource(uv_loop_t *loop, const std::string &path);
     ~CachingHTTPFileSource();
@@ -27,6 +27,8 @@ public:
     void prepare(std::function<void()> fn);
 
     void retryAllPending();
+
+    void reset();
 
 private:
     const unsigned long thread_id;
